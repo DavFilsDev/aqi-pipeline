@@ -1,0 +1,22 @@
+# Environment secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Airflow
+logs/
+airflow.db
+airflow-webserver.pid
+
+# Data (raw is intentionally excluded from git — see README)
+data/raw/*
+!data/raw/.gitkeep
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
