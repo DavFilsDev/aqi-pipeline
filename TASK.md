@@ -15,7 +15,7 @@ Do not edit files outside your own folder without asking — see "Interfaces" be
 
 ---
 
-## Task 1 — Orchestration & infrastructure (project lead)
+## Task 1 — Orchestration & infrastructure
 **Owner:** David
 **Folders:** `dags/`, `docker-compose.yml`, `Dockerfile`, deployment on Oracle Cloud
 
