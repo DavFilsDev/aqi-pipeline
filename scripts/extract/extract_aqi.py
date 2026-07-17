@@ -7,14 +7,25 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import requests
-from dotenv import load_dotenv
+
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    load_dotenv = None
+
 
 
 # ============================================================
 # Configuration
 # ============================================================
 
-load_dotenv()
+if load_dotenv:
+    load_dotenv()
+else:
+    logging.warning(
+        "python-dotenv is not installed. "
+        "Environment variables must already be configured."
+    )
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -55,6 +66,7 @@ REQUEST_TIMEOUT = 30
 MAX_RETRY = 3
 
 
+
 # ============================================================
 # Logging
 # ============================================================
@@ -71,33 +83,63 @@ logging.basicConfig(
 
 
 # ============================================================
-# Charger les villes
+# Load cities
 # ============================================================
 
 def load_cities() -> list[dict]:
     """
-    Charge les villes depuis cities.json
+    Load cities configuration from cities.json.
     """
 
-    if not CITIES_FILE.exists():
+    try:
 
-        raise FileNotFoundError(
-            f"Fichier absent : {CITIES_FILE}"
+        if not CITIES_FILE.exists():
+
+            raise FileNotFoundError(
+                f"Cities file not found: {CITIES_FILE}"
+            )
+
+
+        with open(
+            CITIES_FILE,
+            "r",
+            encoding="utf-8"
+        ) as file:
+
+            cities = json.load(file)
+
+
+        if not isinstance(cities, list):
+
+            raise ValueError(
+                "cities.json must contain a list"
+            )
+
+
+        return cities
+
+
+    except json.JSONDecodeError as error:
+
+        logging.error(
+            f"Invalid JSON format in cities file: {error}"
         )
 
+        raise
 
-    with open(
-        CITIES_FILE,
-        "r",
-        encoding="utf-8"
-    ) as file:
 
-        return json.load(file)
+    except Exception as error:
+
+        logging.error(
+            f"Failed to load cities: {error}"
+        )
+
+        raise
 
 
 
 # ============================================================
-# Appel API AQI
+# Fetch AQI data from API
 # ============================================================
 
 def fetch_aqi(
@@ -106,191 +148,255 @@ def fetch_aqi(
 ) -> dict:
 
     """
-    Récupère les données pollution.
+    Fetch air quality data from OpenWeather API.
 
-    - Sans date :
-        API temps réel
+    If target_datetime is None:
+        Uses current AQI endpoint.
 
-    - Avec date :
-        API historique
+    If target_datetime is provided:
+        Uses historical AQI endpoint.
     """
 
 
-    if not AQI_API_KEY:
-
-        raise ValueError(
-            "AQI_API_KEY manquante"
-        )
+    try:
 
 
-    params = {
+        if not AQI_API_KEY:
 
-        "lat": city["latitude"],
-
-        "lon": city["longitude"],
-
-        "appid": AQI_API_KEY
-
-    }
+            raise ValueError(
+                "AQI_API_KEY is missing"
+            )
 
 
-    if target_datetime:
+        params = {
+
+            "lat": city["latitude"],
+
+            "lon": city["longitude"],
+
+            "appid": AQI_API_KEY
+
+        }
 
 
-        timestamp = int(
-            target_datetime.timestamp()
-        )
+        if target_datetime:
 
 
-        params.update(
-
-            {
-
-                "start": timestamp,
-
-                "end": timestamp + 3600
-
-            }
-
-        )
+            timestamp = int(
+                target_datetime.timestamp()
+            )
 
 
-        url = HISTORY_API_URL
+            params.update(
 
+                {
 
-    else:
+                    "start": timestamp,
 
-        url = CURRENT_API_URL
+                    "end": timestamp + 3600
 
-
-
-    for attempt in range(1, MAX_RETRY + 1):
-
-        try:
-
-
-            response = requests.get(
-
-                url,
-
-                params=params,
-
-                timeout=REQUEST_TIMEOUT
+                }
 
             )
 
 
-            response.raise_for_status()
+            url = HISTORY_API_URL
 
 
-            return response.json()
+        else:
+
+            url = CURRENT_API_URL
 
 
 
-        except requests.exceptions.RequestException as error:
+        for attempt in range(
+            1,
+            MAX_RETRY + 1
+        ):
+
+            try:
 
 
-            logging.warning(
+                response = requests.get(
 
-                f"Tentative {attempt}/{MAX_RETRY} "
-                f"échouée pour {city['name']} : {error}"
+                    url,
 
-            )
+                    params=params,
 
+                    timeout=REQUEST_TIMEOUT
 
-            if attempt < MAX_RETRY:
-
-                time.sleep(
-                    attempt * 5
                 )
 
-            else:
 
-                raise
+                response.raise_for_status()
+
+
+                try:
+
+                    return response.json()
+
+
+                except ValueError as error:
+
+                    logging.error(
+
+                        f"Invalid JSON response "
+                        f"for {city['name']}: {error}"
+
+                    )
+
+                    raise
+
+
+
+            except requests.exceptions.RequestException as error:
+
+
+                logging.warning(
+
+                    f"Attempt {attempt}/{MAX_RETRY} "
+                    f"failed for {city['name']}: {error}"
+
+                )
+
+
+                if attempt < MAX_RETRY:
+
+                    time.sleep(
+                        attempt * 5
+                    )
+
+                else:
+
+                    raise
+
+
+
+    except Exception as error:
+
+        logging.error(
+
+            f"Failed to fetch AQI for "
+            f"{city.get('name', 'unknown')}: {error}"
+
+        )
+
+        raise
 
 
 
 # ============================================================
-# Nom fichier
+# Build filename
 # ============================================================
 
 def build_filename(
     city: dict,
     target_datetime: datetime | None = None
-):
+) -> str:
+
+    """
+    Build raw JSON filename.
+    """
 
 
-    if target_datetime:
+    try:
 
 
-        date_string = (
-            target_datetime
-            .strftime(
-                "%Y-%m-%dT%H-%M-%S"
+        if target_datetime:
+
+
+            date_string = (
+                target_datetime
+                .strftime(
+                    "%Y-%m-%dT%H-%M-%S"
+                )
             )
+
+
+        else:
+
+
+            date_string = (
+                datetime.now(
+                    timezone.utc
+                )
+                .strftime(
+                    "%Y-%m-%dT%H-%M-%S"
+                )
+            )
+
+
+        city_name = (
+
+            city["name"]
+            .lower()
+            .replace(
+                " ",
+                "_"
+            )
+
         )
 
 
-    else:
-
-
-        date_string = (
-            datetime.now(
-                timezone.utc
-            )
-            .strftime(
-                "%Y-%m-%dT%H-%M-%S"
-            )
+        return (
+            f"{city_name}_{date_string}.json"
         )
 
 
-    city_name = (
+    except Exception as error:
 
-        city["name"]
-        .lower()
-        .replace(
-            " ",
-            "_"
+        logging.error(
+            f"Filename creation failed: {error}"
         )
 
-    )
-
-
-    return (
-        f"{city_name}_{date_string}.json"
-    )
+        raise
 
 
 
 # ============================================================
-# Vérifier fichier existant
+# Check existing raw file
 # ============================================================
 
 def raw_file_exists(
     city: dict,
     target_datetime: datetime
-):
+) -> bool:
+
+    """
+    Check if raw file already exists.
+    """
 
 
-    filename = build_filename(
-        city,
-        target_datetime
-    )
+    try:
+
+        filename = build_filename(
+            city,
+            target_datetime
+        )
 
 
-    filepath = (
-        RAW_DIR
-        /
-        filename
-    )
+        filepath = (
+            RAW_DIR
+            /
+            filename
+        )
 
 
-    return filepath.exists()
+        return filepath.exists()
+
+
+    except Exception as error:
+
+        logging.error(
+            f"Failed checking existing file: {error}"
+        )
+
+        raise
 
 
 
 # ============================================================
-# Sauvegarde JSON
+# Save raw JSON
 # ============================================================
 
 def save_raw_json(
@@ -299,82 +405,144 @@ def save_raw_json(
     target_datetime: datetime | None = None
 ):
 
-
-    RAW_DIR.mkdir(
-        parents=True,
-        exist_ok=True
-    )
+    """
+    Save AQI data enriched with city information.
+    """
 
 
-    filename = build_filename(
-        city,
-        target_datetime
-    )
+    try:
 
 
-    filepath = (
-        RAW_DIR
-        /
-        filename
-    )
+        RAW_DIR.mkdir(
+            parents=True,
+            exist_ok=True
+        )
 
 
-    # enrichissement du raw
-
-    data["city"] = city["name"]
-
-
-    if target_datetime:
-
-        data["timestamp"] = (
+        filename = build_filename(
+            city,
             target_datetime
-            .astimezone(timezone.utc)
-            .isoformat()
         )
 
-    else:
 
-        data["timestamp"] = (
-            datetime.now(
-                timezone.utc
+        filepath = (
+            RAW_DIR
+            /
+            filename
+        )
+
+
+        # Add city metadata
+
+        data["city"] = city["name"]
+
+
+        data["country"] = city.get(
+            "country",
+            "Unknown"
+        )
+
+
+        data["coordinates"] = {
+
+            "latitude": city["latitude"],
+
+            "longitude": city["longitude"]
+
+        }
+
+
+        if target_datetime:
+
+            data["timestamp"] = (
+
+                target_datetime
+                .astimezone(timezone.utc)
+                .isoformat()
+
             )
-            .isoformat()
+
+        else:
+
+            data["timestamp"] = (
+
+                datetime.now(
+                    timezone.utc
+                )
+                .isoformat()
+
+            )
+
+
+
+        with open(
+
+            filepath,
+
+            "w",
+
+            encoding="utf-8"
+
+        ) as file:
+
+
+            json.dump(
+
+                data,
+
+                file,
+
+                indent=2,
+
+                ensure_ascii=False
+
+            )
+
+
+        return filepath
+
+
+
+    except KeyError as error:
+
+        logging.error(
+            f"Missing city information: {error}"
         )
 
+        raise
 
 
-    with open(
-        filepath,
-        "w",
-        encoding="utf-8"
-    ) as file:
+    except IOError as error:
 
-
-        json.dump(
-
-            data,
-
-            file,
-
-            indent=2,
-
-            ensure_ascii=False
-
+        logging.error(
+            f"File writing error: {error}"
         )
 
+        raise
 
-    return filepath
+
+    except Exception as error:
+
+        logging.error(
+            f"Failed saving raw data: {error}"
+        )
+
+        raise
 
 
 
 # ============================================================
-# Extraction d'une ville
+# Extract AQI for one city
 # ============================================================
 
 def extract_aqi(
     city: dict,
     target_datetime: datetime | None = None
 ):
+
+    """
+    Extract and save AQI data for one city.
+    """
 
 
     try:
@@ -391,8 +559,8 @@ def extract_aqi(
 
                 logging.info(
 
-                    f"Skip {city['name']} "
-                    f"{target_datetime}"
+                    f"Skipping existing file "
+                    f"{city['name']} {target_datetime}"
 
                 )
 
@@ -402,7 +570,7 @@ def extract_aqi(
 
         logging.info(
 
-            f"Extraction : {city['name']}"
+            f"Extracting : {city['name']}"
 
         )
 
@@ -429,7 +597,7 @@ def extract_aqi(
 
         logging.info(
 
-            f"Sauvegardé : {filepath}"
+            f"Saved : {filepath}"
 
         )
 
@@ -437,11 +605,8 @@ def extract_aqi(
 
     except KeyboardInterrupt:
 
-
         logging.warning(
-
-            "Extraction interrompue par utilisateur"
-
+            "Extraction interrupted by user"
         )
 
         raise
@@ -450,38 +615,70 @@ def extract_aqi(
 
     except Exception as error:
 
-
         logging.error(
 
-            f"Erreur {city['name']} : {error}"
+            f"Extraction failed for "
+            f"{city.get('name', 'unknown')}: {error}"
 
         )
 
 
 
 # ============================================================
-# Mode temps réel
+# Real-time extraction mode
 # ============================================================
 
 def main():
 
-
-    cities = load_cities()
-
-
-    logging.info(
-
-        f"{len(cities)} villes chargées"
-
-    )
+    """
+    Extract current AQI for all cities.
+    """
 
 
-    for city in cities:
+    try:
 
 
-        extract_aqi(city)
+        cities = load_cities()
 
 
+        logging.info(
+
+            f"{len(cities)} cities loaded"
+
+        )
+
+
+        for city in cities:
+
+            extract_aqi(city)
+
+
+
+    except KeyboardInterrupt:
+
+
+        logging.warning(
+            "Program interrupted by user"
+        )
+
+
+
+    except Exception as error:
+
+
+        logging.error(
+
+            f"Application error: {error}"
+
+        )
+
+        raise
+
+
+
+# ============================================================
+# Entry point
+# ============================================================
 
 if __name__ == "__main__":
 
