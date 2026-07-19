@@ -1,11 +1,7 @@
 import pandas as pd
 from pathlib import Path
 import logging
-
-
-# ============================================================
-# Configuration
-# ============================================================
+ 
 
 
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -26,10 +22,7 @@ logging.basicConfig(
 )
 
 
-
-# ============================================================
-# Validation
-# ============================================================
+ 
 
 
 REQUIRED_COLUMNS = [
@@ -66,8 +59,7 @@ def validate():
 
 
 
-    # colonnes
-
+ 
     for column in REQUIRED_COLUMNS:
 
         if column not in df.columns:
@@ -83,8 +75,7 @@ def validate():
 
 
 
-    # doublons
-
+ 
     duplicates = df.duplicated(
         subset=[
             "city",
@@ -106,8 +97,7 @@ def validate():
 
 
 
-    # villes
-
+ 
     cities = df["city"].unique()
 
 

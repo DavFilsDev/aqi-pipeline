@@ -6,18 +6,9 @@ from scripts.extract.extract_aqi import (
     extract_aqi
 )
 
-
-# ============================================================
-# Configuration
-# ============================================================
-
-# Nombre de mois à récupérer
+ 
 BACKFILL_MONTHS = 3
-
-
-# ============================================================
-# Logging
-# ============================================================
+ 
 
 logging.basicConfig(
     level=logging.INFO,
@@ -28,10 +19,7 @@ logging.basicConfig(
     )
 )
 
-
-# ============================================================
-# Calcul période
-# ============================================================
+ 
 
 def get_start_date(months: int) -> datetime:
     """
@@ -58,11 +46,7 @@ def get_end_date() -> datetime:
 
     return datetime.now(timezone.utc)
 
-
-
-# ============================================================
-# Normalisation date
-# ============================================================
+ 
 
 def normalize_hour(date: datetime) -> datetime:
     """
@@ -76,12 +60,7 @@ def normalize_hour(date: datetime) -> datetime:
         second=0,
         microsecond=0
     )
-
-
-
-# ============================================================
-# Exécution backfill
-# ============================================================
+ 
 
 def run_backfill():
 
@@ -151,11 +130,7 @@ def run_backfill():
         "Backfill terminé avec succès"
     )
 
-
-
-# ============================================================
-# Main
-# ============================================================
+ 
 
 if __name__ == "__main__":
 

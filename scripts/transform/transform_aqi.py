@@ -4,11 +4,7 @@ import logging
 from pathlib import Path
 from datetime import datetime
 
-
-# ============================================================
-# Configuration
-# ============================================================
-
+ 
 BASE_DIR = Path(__file__).resolve().parents[2]
 
 RAW_DIR = BASE_DIR / "data" / "raw"
@@ -21,11 +17,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
-
-
-# ============================================================
-# Colonnes du fichier clean
-# ============================================================
+ 
 
 CSV_COLUMNS = [
     "city",
@@ -43,10 +35,7 @@ CSV_COLUMNS = [
     "so2"
 ]
 
-
-# ============================================================
-# Lecture des fichiers raw
-# ============================================================
+ 
 
 def load_raw_files():
 
@@ -59,10 +48,7 @@ def load_raw_files():
     return files
 
 
-
-# ============================================================
-# Transformation d'un fichier JSON
-# ============================================================
+ 
 
 def transform_file(file_path):
 
@@ -139,10 +125,7 @@ def transform_file(file_path):
     return row
 
 
-
-# ============================================================
-# Reconstruction du clean
-# ============================================================
+ 
 
 def build_clean():
 
@@ -174,7 +157,6 @@ def build_clean():
     )
 
 
-    # suppression doublons
     unique_rows = {
 
         (
@@ -192,8 +174,7 @@ def build_clean():
     )
 
 
-    # tri chronologique
-
+ 
     rows.sort(
         key=lambda x:
         datetime.fromisoformat(
@@ -243,10 +224,7 @@ def build_clean():
     )
 
 
-
-# ============================================================
-# Main
-# ============================================================
+ 
 
 if __name__ == "__main__":
 
