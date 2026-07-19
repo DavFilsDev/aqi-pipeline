@@ -34,7 +34,6 @@ logger = logging.getLogger(__name__)
 
 CLEAN_CSV_PATH = os.path.join("data", "clean", "aqi_clean.csv")
 
-# Expected columns in the clean CSV (shared interface, see TASK.md)
 REQUIRED_COLUMNS = [
     "city", "country", "latitude", "longitude",
     "timestamp_utc", "aqi", "pm25", "pm10", "no2", "o3",
@@ -85,7 +84,7 @@ def parse_timestamp(raw_ts: str) -> datetime:
     if raw_ts.endswith("Z"):
         raw_ts = raw_ts[:-1] + "+00:00"
     dt = datetime.fromisoformat(raw_ts)
-    return dt.replace(tzinfo=None)  # store naive UTC, consistent with TIMESTAMP column
+    return dt.replace(tzinfo=None)
 
 
 def upsert_dim_city(conn, rows):
@@ -129,7 +128,7 @@ def upsert_dim_time(conn, rows):
     for row in rows:
         dt = parse_timestamp(row["timestamp_utc"])
         if dt not in distinct_ts:
-            day_of_week = dt.weekday()  # Monday = 0 ... Sunday = 6
+            day_of_week = dt.weekday()
             distinct_ts[dt] = (
                 dt,
                 dt.date(),

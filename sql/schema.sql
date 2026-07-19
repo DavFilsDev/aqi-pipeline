@@ -1,21 +1,3 @@
--- ============================================================
--- AQI Pipeline — Data Warehouse Schema (star schema)
--- Owner: Valisoa (Task 4)
---
--- Design:
---   fact_aqi   -> measures only (aqi, pm25, pm10, no2, o3) + FKs
---   dim_city   -> descriptive city attributes, no measures
---   dim_time   -> descriptive time attributes, no measures
---
--- Idempotency:
---   - dim_city  : UNIQUE (city, country)          -> upsert-safe
---   - dim_time  : UNIQUE (timestamp_utc)           -> upsert-safe
---   - fact_aqi  : UNIQUE (city_id, time_id)        -> re-running the
---     loader can never create a duplicate fact row for the same
---     city + hour; it will just update the measures (see
---     load_warehouse.py, ON CONFLICT ... DO UPDATE).
--- ============================================================
-
 CREATE TABLE IF NOT EXISTS dim_city (
     city_id     SERIAL PRIMARY KEY,
     city        TEXT NOT NULL,
