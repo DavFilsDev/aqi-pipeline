@@ -6,27 +6,21 @@
     "longitude": 2.3522
   },
   {
+    "name": "Madrid",
+    "country": "Spain",
+    "latitude": 40.4168,
+    "longitude": -3.7038
+  },
+  {
+    "name": "Buenos Aires",
+    "country": "Argentina",
+    "latitude": -34.6037,
+    "longitude": -58.3816
+  },
+  {
     "name": "London",
-    "country": "United Kingdom",
+    "country": "England",
     "latitude": 51.5074,
     "longitude": -0.1278
-  },
-  {
-    "name": "Tokyo",
-    "country": "Japan",
-    "latitude": 35.6762,
-    "longitude": 139.6503
-  },
-  {
-    "name": "New York",
-    "country": "United States",
-    "latitude": 40.7128,
-    "longitude": -74.0060
-  },
-  {
-    "name": "Antananarivo",
-    "country": "Madagascar",
-    "latitude": -18.8792,
-    "longitude": 47.5079
   }
 ]
