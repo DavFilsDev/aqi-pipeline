@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS dim_time (
     timestamp_utc   TIMESTAMP NOT NULL,
     date            DATE NOT NULL,
     hour            SMALLINT NOT NULL CHECK (hour BETWEEN 0 AND 23),
-    day_of_week     SMALLINT NOT NULL CHECK (day_of_week BETWEEN 0 AND 6), -- 0 = Monday .. 6 = Sunday
+    day_of_week     SMALLINT NOT NULL CHECK (day_of_week BETWEEN 0 AND 6),
     is_weekend      BOOLEAN NOT NULL,
     CONSTRAINT uq_dim_time UNIQUE (timestamp_utc)
 );
