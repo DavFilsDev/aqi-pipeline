@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 from datetime import datetime
 
- 
+
 BASE_DIR = Path(__file__).resolve().parents[2]
 
 RAW_DIR = BASE_DIR / "data" / "raw"
@@ -17,7 +17,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
- 
+
 
 CSV_COLUMNS = [
     "city",
@@ -35,20 +35,17 @@ CSV_COLUMNS = [
     "so2"
 ]
 
- 
 
 def load_raw_files():
 
     files = list(RAW_DIR.glob("*.json"))
 
     logging.info(
-        f"{len(files)} fichiers raw trouvés"
+        f"{len(files)} raw files found"
     )
 
     return files
 
-
- 
 
 def transform_file(file_path):
 
@@ -125,8 +122,6 @@ def transform_file(file_path):
     return row
 
 
- 
-
 def build_clean():
 
     rows = []
@@ -147,13 +142,12 @@ def build_clean():
         except Exception as error:
 
             logging.error(
-                f"Erreur {file}: {error}"
+                f"Error processing {file}: {error}"
             )
 
 
-
     logging.info(
-        f"{len(rows)} lignes générées"
+        f"{len(rows)} rows generated"
     )
 
 
@@ -174,7 +168,6 @@ def build_clean():
     )
 
 
- 
     rows.sort(
         key=lambda x:
         datetime.fromisoformat(
@@ -215,16 +208,14 @@ def build_clean():
 
 
     logging.info(
-        f"Clean créé : {OUTPUT_FILE}"
+        f"Clean file created: {OUTPUT_FILE}"
     )
 
 
     logging.info(
-        f"{len(rows)} lignes finales"
+        f"{len(rows)} final rows"
     )
 
-
- 
 
 if __name__ == "__main__":
 
