@@ -69,11 +69,8 @@ logging.basicConfig(
         "%(asctime)s "
         "- %(levelname)s "
         "- %(message)s"
-    ),
-    handlers=[
-        logging.FileHandler("extraction.log"),
-        logging.StreamHandler()
-    ]
+    )
+    
 )
  
 
