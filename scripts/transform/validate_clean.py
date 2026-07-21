@@ -1,7 +1,6 @@
 import pandas as pd
 from pathlib import Path
 import logging
- 
 
 
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -15,14 +14,10 @@ CLEAN_FILE = (
 )
 
 
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(levelname)s - %(message)s"
 )
-
-
- 
 
 
 REQUIRED_COLUMNS = [
@@ -37,14 +32,12 @@ REQUIRED_COLUMNS = [
 ]
 
 
-
 def validate():
-
 
     if not CLEAN_FILE.exists():
 
         raise Exception(
-            "Le fichier clean n'existe pas"
+            "The clean file does not exist"
         )
 
 
@@ -54,28 +47,24 @@ def validate():
 
 
     logging.info(
-        f"{len(df)} lignes trouvées"
+        f"{len(df)} rows found"
     )
 
 
-
- 
     for column in REQUIRED_COLUMNS:
 
         if column not in df.columns:
 
             raise Exception(
-                f"Colonne absente : {column}"
+                f"Missing column: {column}"
             )
 
 
     logging.info(
-        "Colonnes OK"
+        "Columns validated successfully"
     )
 
 
-
- 
     duplicates = df.duplicated(
         subset=[
             "city",
@@ -87,22 +76,20 @@ def validate():
     if duplicates > 0:
 
         raise Exception(
-            f"{duplicates} doublons trouvés"
+            f"{duplicates} duplicates found"
         )
 
 
     logging.info(
-        "Aucun doublon"
+        "No duplicates found"
     )
 
 
-
- 
     cities = df["city"].unique()
 
 
     logging.info(
-        f"{len(cities)} villes détectées"
+        f"{len(cities)} cities detected"
     )
 
 
@@ -112,9 +99,8 @@ def validate():
 
 
     logging.info(
-        "Validation terminée avec succès"
+        "Validation completed successfully"
     )
-
 
 
 if __name__ == "__main__":
