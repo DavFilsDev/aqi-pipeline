@@ -81,8 +81,7 @@ def run_backfill():
         (
             end_date - start_date
         ).total_seconds()
-        // 3600
-    )
+     )
 
     logging.info(
         f"Total hours to process: {total_hours}"
