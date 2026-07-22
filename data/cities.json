@@ -22,5 +22,11 @@
     "country": "England",
     "latitude": 51.5074,
     "longitude": -0.1278
+  },
+  {
+    "name": "Antananarivo",
+    "country": "Madagascar",
+    "latitude": -18.8792,
+    "longitude": 47.5079
   }
 ]
