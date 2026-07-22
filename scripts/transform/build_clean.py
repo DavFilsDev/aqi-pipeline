@@ -2,56 +2,31 @@ import json
 import pandas as pd
 from pathlib import Path
 
-# Chemins du projet
-
 BASE_DIR = Path(__file__).resolve().parents[2]
 
 RAW_FOLDER = BASE_DIR / "data" / "raw"
 OUTPUT_FILE = BASE_DIR / "data" / "clean" / "aqi_clean.csv"
 
-
-# Extraction d'une ligne depuis un JSON
-
 def extract_row(data):
+    entries = data.get("list") or [{}]
+    entry = entries[0]
+    main = entry.get("main", {})
+    components = entry.get("components", {})
 
-    city = data.get("city") or data.get("name")
-
-    country = data.get("country")
-
-    latitude = data.get("latitude") or data.get("lat")
-
-    longitude = data.get("longitude") or data.get("lon")
-
-    aqi = data.get("aqi") or data.get("AQI")
-
-    pm25 = data.get("pm25")
-
-    pm10 = data.get("pm10")
-
-    no2 = data.get("no2")
-
-    o3 = data.get("o3")
-
-    timestamp = (
-        data.get("timestamp_utc")
-        or data.get("timestamp")
-        or data.get("time")
-    )
+    coords = data.get("coordinates", {})
 
     return {
-        "city": city,
-        "country": country,
-        "latitude": latitude,
-        "longitude": longitude,
-        "timestamp_utc": timestamp,
-        "aqi": aqi,
-        "pm25": pm25,
-        "pm10": pm10,
-        "no2": no2,
-        "o3": o3
+        "city": data.get("city"),
+        "country": data.get("country"),
+        "latitude": coords.get("latitude"),
+        "longitude": coords.get("longitude"),
+        "timestamp_utc": data.get("timestamp"),
+        "aqi": main.get("aqi"),
+        "pm25": components.get("pm2_5"),
+        "pm10": components.get("pm10"),
+        "no2": components.get("no2"),
+        "o3": components.get("o3"),
     }
-
-# Lecture des fichiers RAW
 
 def read_raw_files():
 
@@ -79,9 +54,6 @@ def read_raw_files():
             print(f"Erreur avec {file.name} : {e}")
 
     return rows
-
-
-# Transformation RAW -> CLEAN
 
 def build_clean():
 
@@ -145,8 +117,6 @@ def build_clean():
     print(f"Nombre de lignes : {len(df)}")
     print(df)
 
-
-# Programme principal
 
 if __name__ == "__main__":
     build_clean()
