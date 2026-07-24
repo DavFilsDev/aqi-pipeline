@@ -6,15 +6,7 @@ __pycache__/
 *.pyc
 .venv/
 venv/
-extraction.log
-# Airflow
-logs/
-airflow.db
-airflow-webserver.pid
-
-# Data (raw is intentionally excluded from git — see README)
-data/raw/*
-!data/raw/.gitkeep
+*.log
 
 # OS / editor
 .DS_Store
