@@ -6,7 +6,7 @@ on:
   workflow_dispatch: {}
 
 concurrency:
-  group: aqi-pipeline
+  group: aqi-pipeline-data
   cancel-in-progress: false
 
 permissions:
@@ -47,6 +47,25 @@ jobs:
         run: |
           git config user.name "aqi-pipeline-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/raw data/clean
-          git diff --cached --quiet || git commit -m "data: hourly AQI update $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-          git push
+
+          for i in 1 2 3 4 5; do
+            git add data/raw data/clean
+            if git diff --cached --quiet; then
+              echo "No changes to commit."
+              exit 0
+            fi
+            git commit -m "data: hourly AQI update $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+            if git push origin main; then
+              echo "Push succeeded."
+              exit 0
+            fi
+
+            echo "Push rejected, pulling latest and retrying ($i)..."
+            git fetch origin main
+            git rebase origin/main
+            sleep $((RANDOM % 10 + 5))
+          done
+
+          echo "Push failed after 5 attempts."
+          exit 1
