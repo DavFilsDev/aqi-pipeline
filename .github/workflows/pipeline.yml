@@ -1,0 +1,52 @@
+name: AQI Hourly Pipeline
+
+on:
+  schedule:
+    - cron: "5 * * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: aqi-pipeline
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Extract AQI data (current hour, all cities)
+        env:
+          AQI_API_KEY: ${{ secrets.AQI_API_KEY }}
+        run: python scripts/extract/extract_aqi.py
+
+      - name: Rebuild clean CSV from raw/
+        run: python scripts/transform/build_clean.py
+
+      - name: Validate clean CSV against the data contract
+        run: python scripts/transform/validate_clean.py
+
+      - name: Load warehouse (Neon)
+        env:
+          NEON_DB_URL: ${{ secrets.NEON_DB_URL }}
+        run: python scripts/load/load_warehouse.py
+
+      - name: Commit and push updated raw/clean data
+        run: |
+          git config user.name "aqi-pipeline-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/raw data/clean
+          git diff --cached --quiet || git commit -m "data: hourly AQI update $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          git push
