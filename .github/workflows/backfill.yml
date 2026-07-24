@@ -1,0 +1,31 @@
+name: AQI Backfill (manual)
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340   # stay under the 360-minute (6h) hard limit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Run backfill
+        env:
+          AQI_API_KEY: ${{ secrets.AQI_API_KEY }}
+        run: python -m scripts.extract.backfill
+      - name: Rebuild clean CSV
+        run: python scripts/transform/build_clean.py
+      - name: Commit and push
+        run: |
+          git config user.name "aqi-pipeline-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/raw data/clean
+          git diff --cached --quiet || git commit -m "data: backfill run $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          git push
