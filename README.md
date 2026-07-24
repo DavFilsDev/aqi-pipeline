@@ -1,67 +1,37 @@
 # AQI Pipeline
 
 Automated pipeline collecting Air Quality Index (AQI) data for 5 cities,
-orchestrated with Apache Airflow, loaded into a dimensional data warehouse (Neon/Postgres).
+orchestrated with github Actions, loaded into a dimensional data warehouse (Neon/Postgres).
 
 ## Project structure
+......
 
-- `dags/` — Airflow DAGs
-- `scripts/extract/` — API extraction logic (per-city)
-- `scripts/transform/` — raw/ -> clean/ transformation
-- `scripts/load/` — load_warehouse.py and warehouse loading logic
-- `data/raw/` — raw untouched files (git-ignored, kept on the deployment host)
-- `data/clean/` — single rebuilt CSV (versioned)
-- `sql/` — warehouse schema and validation queries
-
-## Local setup (Windows / macOS / Linux)
-
-### 1. Install Docker
-- **Windows**: install Docker Desktop (enable WSL2 when prompted). Use the WSL terminal or PowerShell for the commands below.
-- **Ubuntu/Debian**: `sudo apt install docker.io docker-compose-plugin`, then `sudo usermod -aG docker $USER` and log back in.
-
-### 2. Clone and configure
+### 1. Clone and configure
 ```bash
-git clone https://github.com/<org>/aqi-pipeline.git
+git clone https://github.com/DavFilsDev/aqi-pipeline.git
 cd aqi-pipeline
 cp .env.example .env
 ```
-Fill in `.env` with your own AQI API key. Ask the team for the Neon connection string (or use your own dev Neon branch).
+Fill in `.env` with your own AQI API key and the Neon connection string.
 
-On Linux/macOS only, set your user ID to avoid file permission issues:
-```bash
-echo "AIRFLOW_UID=$(id -u)" >> .env
-```
-(Windows users: leave the default `AIRFLOW_UID=50000` in `.env.example`.)
-
-### 3. Start Airflow
-```bash
-docker compose up -d --build
-```
-First start takes a few minutes (image build + Airflow DB init).
-
-### 4. Open the UI
-Go to http://localhost:8080 — login `admin` / `admin`.
-You should see the `hello_etl` DAG. Unpause it and trigger it manually to confirm your setup works (check the logs of each task).
-
-### 5. Develop
-- Add your DAG file in `dags/` — it appears in the UI within ~30 seconds.
-- Add your extraction/transform/load logic in the matching `scripts/` subfolder.
-- You can also test scripts standalone (outside Airflow) with a local virtualenv:
+### 2. Install dependencies
 ```bash
 python3 -m venv .venv
-source .venv/bin/activate   # Windows: .venv\\Scripts\\activate
+source .venv/bin/activate
 pip install -r requirements.txt
-python scripts/extract/your_script.py
 ```
 
-### 6. Stop
+### 3. Run the pipeline manually, step by step
 ```bash
-docker compose down        # stop containers, keep data
-docker compose down -v     # stop and wipe Airflow's internal DB (reset)
+python scripts/extract/extract_aqi.py
+python scripts/transform/build_clean.py
+python scripts/transform/validate_clean.py
+python scripts/load/load_warehouse.py
 ```
 
-## Data contract (clean/)
-TODO — filled in by the transformation owner: exact columns, units, cities with lat/lon.
-
-## Warehouse schema
-TODO — filled in by the warehouse owner: star schema description.
+### 4. Automated runs
+The pipeline runs automatically every hour via GitHub Actions
+(`.github/workflows/pipeline.yml`). You can also trigger it manually
+from the repo's **Actions** tab -> "AQI Hourly Pipeline" -> "Run workflow".
+Each run commits the newly collected raw files and the rebuilt clean CSV
+back to `main`.
