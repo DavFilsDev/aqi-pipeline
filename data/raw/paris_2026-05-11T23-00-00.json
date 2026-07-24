@@ -1,0 +1,14 @@
+{
+  "coord": {
+    "lon": 2.3522,
+    "lat": 48.8566
+  },
+  "list": [],
+  "city": "Paris",
+  "country": "France",
+  "coordinates": {
+    "latitude": 48.8566,
+    "longitude": 2.3522
+  },
+  "timestamp": "2026-05-11T23:00:00+00:00"
+}
