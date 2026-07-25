@@ -58,7 +58,6 @@ def to_float_or_none(value):
 
 
 def parse_timestamp(raw_ts: str) -> datetime:
-    """Parse an ISO-8601 UTC timestamp, with or without a trailing 'Z'."""
     raw_ts = raw_ts.strip()
     if raw_ts.endswith("Z"):
         raw_ts = raw_ts[:-1] + "+00:00"
@@ -67,22 +66,19 @@ def parse_timestamp(raw_ts: str) -> datetime:
 
 
 def upsert_dim_city(conn, rows):
-    """Upsert every distinct (city, country, lat, lon) and return {(city, country): city_id}."""
     distinct_cities = {}
     for row in rows:
         key = (row["city"], row["country"])
         distinct_cities[key] = (
-            row["city"],
-            row["country"],
-            to_float_or_none(row["latitude"]),
-            to_float_or_none(row["longitude"]),
+            row["city"], row["country"],
+            to_float_or_none(row["latitude"]), to_float_or_none(row["longitude"]),
         )
 
     values = list(distinct_cities.values())
     city_id_by_key = {}
 
     with conn.cursor() as cur:
-        execute_values(
+        results = execute_values(
             cur,
             """
             INSERT INTO dim_city (city, country, latitude, longitude)
@@ -92,8 +88,10 @@ def upsert_dim_city(conn, rows):
             RETURNING city_id, city, country
             """,
             values,
+            page_size=500,
+            fetch=True, 
         )
-        for city_id, city, country in cur.fetchall():
+        for city_id, city, country in results:
             city_id_by_key[(city, country)] = city_id
 
     conn.commit()
@@ -102,39 +100,32 @@ def upsert_dim_city(conn, rows):
 
 
 def upsert_dim_time(conn, rows):
-    """Upsert every distinct timestamp and return {timestamp_utc (datetime): time_id}."""
     distinct_ts = {}
     for row in rows:
         dt = parse_timestamp(row["timestamp_utc"])
         if dt not in distinct_ts:
             day_of_week = dt.weekday()
-            distinct_ts[dt] = (
-                dt,
-                dt.date(),
-                dt.hour,
-                day_of_week,
-                day_of_week >= 5,
-            )
+            distinct_ts[dt] = (dt, dt.date(), dt.hour, day_of_week, day_of_week >= 5)
 
     values = list(distinct_ts.values())
     time_id_by_ts = {}
 
     with conn.cursor() as cur:
-        execute_values(
+        results = execute_values(
             cur,
             """
             INSERT INTO dim_time (timestamp_utc, date, hour, day_of_week, is_weekend)
             VALUES %s
             ON CONFLICT (timestamp_utc)
-            DO UPDATE SET date = EXCLUDED.date,
-                          hour = EXCLUDED.hour,
-                          day_of_week = EXCLUDED.day_of_week,
-                          is_weekend = EXCLUDED.is_weekend
+            DO UPDATE SET date = EXCLUDED.date, hour = EXCLUDED.hour,
+                          day_of_week = EXCLUDED.day_of_week, is_weekend = EXCLUDED.is_weekend
             RETURNING time_id, timestamp_utc
             """,
             values,
+            page_size=500,
+            fetch=True,
         )
-        for time_id, timestamp_utc in cur.fetchall():
+        for time_id, timestamp_utc in results:
             time_id_by_ts[timestamp_utc] = time_id
 
     conn.commit()
@@ -148,12 +139,9 @@ def upsert_fact_aqi(conn, rows, city_id_by_key, time_id_by_ts):
         city_id = city_id_by_key[(row["city"], row["country"])]
         time_id = time_id_by_ts[parse_timestamp(row["timestamp_utc"])]
         values.append((
-            city_id,
-            time_id,
-            to_float_or_none(row["aqi"]),
-            to_float_or_none(row["pm25"]),
-            to_float_or_none(row["pm10"]),
-            to_float_or_none(row["no2"]),
+            city_id, time_id,
+            to_float_or_none(row["aqi"]), to_float_or_none(row["pm25"]),
+            to_float_or_none(row["pm10"]), to_float_or_none(row["no2"]),
             to_float_or_none(row["o3"]),
         ))
 
@@ -164,13 +152,11 @@ def upsert_fact_aqi(conn, rows, city_id_by_key, time_id_by_ts):
             INSERT INTO fact_aqi (city_id, time_id, aqi, pm25, pm10, no2, o3)
             VALUES %s
             ON CONFLICT (city_id, time_id)
-            DO UPDATE SET aqi = EXCLUDED.aqi,
-                          pm25 = EXCLUDED.pm25,
-                          pm10 = EXCLUDED.pm10,
-                          no2 = EXCLUDED.no2,
-                          o3 = EXCLUDED.o3
+            DO UPDATE SET aqi = EXCLUDED.aqi, pm25 = EXCLUDED.pm25,
+                          pm10 = EXCLUDED.pm10, no2 = EXCLUDED.no2, o3 = EXCLUDED.o3
             """,
             values,
+            page_size=500,
         )
     conn.commit()
     logger.info("fact_aqi: %d rows upserted (no duplicates created on re-run).", len(values))
