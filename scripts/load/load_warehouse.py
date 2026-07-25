@@ -1,24 +1,3 @@
-"""
-Task 4 — Data warehouse loader (Owner: Valisoa)
-
-Reads data/clean/aqi_clean.csv (produced by task 3) and loads it into the
-Neon/Postgres star schema defined in sql/schema.sql:
-
-    dim_city  <-\
-                 fact_aqi (measures + FKs only)
-    dim_time  <-/
-
-Rejouable (safe to re-run):
-    - dim_city / dim_time are upserted on their natural keys
-      (city+country / timestamp_utc).
-    - fact_aqi is upserted on (city_id, time_id): re-running the script
-      on the same clean CSV updates the measures in place instead of
-      inserting duplicate rows.
-
-Usage:
-    python scripts/load/load_warehouse.py
-"""
-
 import csv
 import logging
 import os
