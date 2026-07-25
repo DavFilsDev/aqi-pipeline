@@ -6,7 +6,7 @@ from scripts.extract.extract_aqi import (
     extract_aqi
 )
 
-BACKFILL_MONTHS = 3
+BACKFILL_MONTHS = 5
 
 logging.basicConfig(
     level=logging.INFO,
