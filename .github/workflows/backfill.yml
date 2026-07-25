@@ -4,7 +4,7 @@ on:
   workflow_dispatch: {}
 
 concurrency:
-  group: aqi-pipeline-data
+  group: aqi-backfill
   cancel-in-progress: false
 
 permissions:
