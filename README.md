@@ -102,3 +102,11 @@ commits the newly collected raw files and the rebuilt clean CSV back to `main`.
 
 Backfill (one-time, historical data) runs via
 `.github/workflows/backfill.yml`, triggered manually from the Actions tab.
+
+## Raw data volume
+`data/raw/` contains one JSON file per city per hourly API call — currently
+~31,400+ files covering 9 cities over a 5-month backfill window, plus new
+files added hourly. GitHub's file browser truncates directory listings
+beyond 1000 entries; clone the repo (`git clone ...`) to browse or verify
+the full set locally, or check `data/clean/aqi_clean.csv` for the
+consolidated, human-readable view.
