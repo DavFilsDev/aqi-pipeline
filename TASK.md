@@ -5,52 +5,65 @@ Do not edit files outside your own folder without asking — see "Interfaces" be
 
 ## Shared interfaces (read this first — this is what lets everyone work in parallel)
 
-- **Cities file**: `data/cities.json` — list of the 5 chosen cities with name, country, lat, lon.
-  Created once (by task owner #2), then everyone reads from it. Do not hardcode city lists elsewhere.
+- **Cities file**: `data/cities.json` — 9 cities (name, country, lat, lon): Paris, Madrid,
+  Buenos Aires, London, and 5 Malagasy cities (Antananarivo, Toamasina, Antsirabe,
+  Mahajanga, Fianarantsoa). Everyone reads from this file — never hardcode a city list
+  elsewhere.
 - **Raw file naming convention**: `data/raw/<city_slug>_<YYYY-MM-DDTHH-MM-SS>.json`
-  (e.g. `paris_2026-07-17T14-00-00.json`) — one file per city per API call, raw JSON, untouched.
-- **Clean CSV columns** (draft — task #3 finalizes and documents exact units in README):
-  `city, country, latitude, longitude, timestamp_utc, aqi, pm25, pm10, no2, o3` (add more if the API provides them)
-- **Warehouse connection**: read from `NEON_DB_URL` env var — never hardcode credentials.
+  (e.g. `paris_2026-07-17T14-00-00.json`) — one file per city per API call, raw JSON,
+  untouched. **This folder is versioned in Git** (not git-ignored) — it is the only
+  persistent storage available since GitHub Actions runners are ephemeral.
+- **Clean CSV columns**: `city, country, latitude, longitude, timestamp_utc, aqi, pm25,
+  pm10, no2, o3` — finalized, documented with units in `README.md`.
+- **Secrets**: `AQI_API_KEY` and `NEON_DB_URL` — stored locally in `.env` (never
+  committed) AND as GitHub Actions repository secrets (Settings → Secrets and
+  variables → Actions), used by the workflows in `.github/workflows/`.
+- **Orchestrator**: GitHub Actions, not Airflow/Docker/Oracle Cloud (migration
+  completed — see `ARCHITECTURE.md`). No DAGs; workflows are sequential YAML steps.
 
 ---
 
-## Task 1 — Orchestration & infrastructure
+## Task 1 — Orchestration & CI/CD
 **Owner:** David
-**Folders:** `dags/`, `docker-compose.yml`, `Dockerfile`, deployment on Oracle Cloud
+**Folders:** `.github/workflows/`
 
 **Deliverables:**
-- Working local Airflow (done)
-- `dags/aqi_pipeline_dag.py` assembling everyone's tasks (extract per city -> transform -> load)
-- Airflow deployed on the Oracle Cloud VM, running continuously with an hourly schedule
+- `.github/workflows/pipeline.yml` — hourly cron (`5 * * * *`): extract → build clean →
+  validate → load warehouse → commit & push raw/clean data back to `main`
+- `.github/workflows/backfill.yml` — manual (`workflow_dispatch`) historical run
+- Concurrency handled per-workflow (separate groups) with retry-on-push-conflict
+  (fetch + rebase) to avoid races between the two workflows
+- GitHub repo settings configured: Actions → workflow permissions set to
+  "Read and write", both secrets added
 
-**Definition of done:** DAG runs end-to-end in the UI with all tasks green, on both local and the VM.
+**Definition of done:** the hourly workflow appears in the Actions run history with
+successful runs at least 5 hours apart with nobody watching, and each successful run
+produces a new commit on `main`.
 
 ---
 
 ## Task 2 — API extraction
 **Owner:** Fenohasina
-**Folder:** `scripts/extract/`
-
-**What you receive:** the 5 chosen cities (agree on them with the team today), an AQI API key in `.env`.
+**Folder:** `scripts/extract/`, `data/cities.json`
 
 **What you deliver:**
-- `data/cities.json` — the 5 cities with name, country, latitude, longitude
-- `scripts/extract/extract_aqi.py` with a function `extract_aqi(city: dict) -> None` that:
-  - calls the AQI API for one city
-  - wraps the call in try/except (log the error, don't crash)
-  - writes the raw JSON response to `data/raw/` following the naming convention above
-- `scripts/extract/backfill.py` — same logic but replayable for historical dates (3-12 months), rejouable (can be re-run safely, e.g. skips a date/city if the raw file already exists)
+- `data/cities.json` — 9 cities with name, country, latitude, longitude (done)
+- `scripts/extract/extract_aqi.py` — calls the AQI API for one city, try/except per
+  call (logs the error, never crashes the whole run), writes raw JSON to `data/raw/`
+- `scripts/extract/backfill.py` — same logic, replayable over a historical window
+  (`BACKFILL_MONTHS`, currently set to 5 — within the 3-12 month range required),
+  idempotent (skips a date/city if the raw file already exists)
 
-**How to test it yourself (no Airflow needed):**
+**How to test it yourself:**
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 python scripts/extract/extract_aqi.py
-ls data/raw/   # you should see one new JSON file per city
-cat data/raw/<one_file>.json   # check it's valid, non-empty JSON with real AQI values
+ls data/raw/   # one new JSON file per city
 ```
-**Done when:** running the script produces 5 valid raw files (one per city), and running it twice in a row doesn't overwrite or corrupt anything (each call = new file).
+
+**Done when:** running the script twice never overwrites or corrupts a file (each call
+= a new, uniquely-named file).
 
 ---
 
@@ -58,24 +71,23 @@ cat data/raw/<one_file>.json   # check it's valid, non-empty JSON with real AQI 
 **Owner:** Sarobidy
 **Folder:** `scripts/transform/`
 
-**What you receive:** raw JSON files in `data/raw/` (from task 2 — ask them for a few sample files today so you can start immediately without waiting).
-
 **What you deliver:**
-- `scripts/transform/build_clean.py` — reads ALL files in `data/raw/`, produces `data/clean/aqi_clean.csv`:
-  - one row per city + per hour
-  - sorted chronologically
-  - deduplicated (same city + same hour = only one row, keep the most recent raw file if duplicates exist)
-  - fully rebuilt from `raw/` every run (never append-only unless you handle dedup — rebuilding is simpler, do that)
-- Exact column list + units documented (you'll add this to the storage README)
+- `scripts/transform/build_clean.py` — reads every file in `data/raw/` (parses the
+  OpenWeather `list[0].main.aqi` / `list[0].components.*` structure), rebuilds
+  `data/clean/aqi_clean.csv` from scratch every run: one row per city+hour, sorted
+  chronologically, deduplicated (city+hour, keeps the most recent raw file on conflict)
+- `scripts/transform/validate_clean.py` *(also referenced in Task 5 — same file, single
+  source of truth)*
 
 **How to test it yourself:**
 ```bash
-# drop a few sample raw JSON files into data/raw/ manually first if task 2 isn't done yet
 python scripts/transform/build_clean.py
 head data/clean/aqi_clean.csv
-wc -l data/clean/aqi_clean.csv   # sanity check row count
+wc -l data/clean/aqi_clean.csv
 ```
-**Done when:** `aqi_clean.csv` has no duplicate (city, hour) pairs, is sorted, and running the script twice produces an identical file (idempotent).
+
+**Done when:** no duplicate (city, hour) pairs, correctly sorted, and running the
+script twice on the same `data/raw/` produces an identical file (idempotent).
 
 ---
 
@@ -83,36 +95,49 @@ wc -l data/clean/aqi_clean.csv   # sanity check row count
 **Owner:** Valisoa
 **Folders:** `sql/`, `scripts/load/`
 
-**What you receive:** a Neon connection string (create your own free Neon project today if you want to develop independently, then switch to the shared one later), and the `data/clean/aqi_clean.csv` column list from task 3 (ask them today for the draft columns so you're not blocked).
-
 **What you deliver:**
-- `sql/schema.sql` — star schema: `fact_aqi` (measures + FKs only, no descriptive columns), `dim_time` (date, hour, day_of_week, is_weekend), `dim_city` (name, country, lat, lon — no measures)
-- `scripts/load/load_warehouse.py` — reads `data/clean/aqi_clean.csv`, upserts into `dim_city`/`dim_time`, inserts into `fact_aqi`. Must be rejouable (running it twice must not create duplicate fact rows).
+- `sql/schema.sql` — star schema: `fact_aqi` (measures + FKs only), `dim_time` (date,
+  hour, day_of_week, is_weekend), `dim_city` (name, country, lat, lon) — no measures in
+  dimensions, no descriptive columns in the fact table
+- `scripts/load/load_warehouse.py` — reads `data/clean/aqi_clean.csv`, upserts into
+  `dim_city`/`dim_time`/`fact_aqi` using `execute_values(..., fetch=True)` (important:
+  `fetch=True` is required so `RETURNING` captures every page of a large batch, not
+  just the last one — this caused a KeyError bug before it was fixed)
 
 **How to test it yourself:**
 ```bash
 psql "$NEON_DB_URL" -f sql/schema.sql
 python scripts/load/load_warehouse.py
 psql "$NEON_DB_URL" -c "SELECT count(*) FROM fact_aqi;"
-psql "$NEON_DB_URL" -c "SELECT * FROM fact_aqi LIMIT 5;"
 ```
-**Done when:** row count in `fact_aqi` is roughly `cities × hours covered`, no measures appear in dimension tables, running the load script twice doesn't double the row count.
+
+**Done when:** row count in `fact_aqi` ≈ `9 cities × hours covered`, no measures in
+dimension tables, running the load script twice doesn't change the row count.
 
 ---
 
 ## Task 5 — Quality, docs, backfill, video
 **Owner:** Zinedis
-**Folders:** validation scripts, `README.md` (storage section), `RAPPORT.md`, video
+**Folders:** `scripts/transform/validate_clean.py`, `README.md`, `RAPPORT.md`, video
 
 **What you deliver:**
-- `scripts/validate_clean.py` — checks `data/clean/aqi_clean.csv` against the data contract (no duplicates, no nulls in required columns, chronological order, one row per city per hour)
-- Coordinates the backfill run (works with task 2) — confirms 3-12 months of history exists in `data/raw/` for all 5 cities
-- Finalizes `README.md`: cities + lat/lon, exact columns + units in `clean/`, warehouse schema diagram, period covered, known gaps, DB connection info
-- `RAPPORT.md`: team working method, task split (link to this file), difficulties + solutions, justified technical choices
-- 3-minute demo video: pipeline running -> storage zones -> a SQL query on the warehouse
+- `scripts/transform/validate_clean.py` *(note: lives under `scripts/transform/`, not
+  `scripts/`)* — checks `data/clean/aqi_clean.csv` against the data contract (no
+  duplicates, no nulls in required columns, chronological order, one row per city+hour)
+- Confirms the 5-month backfill completed for all 9 cities in `data/raw/`
+- Finalizes `README.md`: cities + lat/lon, exact columns + units, warehouse schema,
+  period covered, known gaps, read-only DB connection info
+- `RAPPORT.md`: team working method, task split, difficulties + solutions (including
+  the Docker DNS issue and the Airflow→GitHub Actions migration), technical choices
+- 3-minute demo video: **use the GitHub Actions run history and the automatic commit
+  history on `main` as proof of automated runs** (replaces the Airflow UI screenshots
+  originally planned) → pipeline running → storage zones (`data/raw`, `data/clean`) →
+  a SQL query on the warehouse
 
 **How to test it yourself:**
 ```bash
-python scripts/validate_clean.py   # should print PASS or a clear list of violations
+python scripts/transform/validate_clean.py
 ```
-**Done when:** validation script passes with zero errors, and all four docs are readable by someone outside the team without needing to ask questions.
+
+**Done when:** validation passes with zero errors, and all docs are readable by
+someone outside the team without needing to ask questions.
