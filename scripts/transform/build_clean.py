@@ -37,7 +37,6 @@ def read_raw_files():
             with open(file, "r", encoding="utf-8") as f:
                 data = json.load(f)
             row = extract_row(data)
-            row["raw_file_time"] = file.stat().st_mtime
             rows.append(row)
         except Exception as e:
             print(f"Error reading {file.name}: {e}")
@@ -57,7 +56,7 @@ def build_clean():
     df = df.dropna(subset=["city", "timestamp_utc"])
 
     df["hour"] = df["timestamp_utc"].dt.floor("h")
-    df = df.sort_values(by=["city", "hour", "raw_file_time"])
+    df = df.sort_values(by=["city", "hour", "timestamp_utc"])
     df = df.drop_duplicates(subset=["city", "hour"], keep="last")
     df = df.sort_values(by=["timestamp_utc", "city"])
 
