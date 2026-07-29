@@ -1,0 +1,31 @@
+{
+  "coord": {
+    "lon": 46.3167,
+    "lat": -15.7167
+  },
+  "list": [
+    {
+      "main": {
+        "aqi": 2
+      },
+      "components": {
+        "co": 103.08,
+        "no": 0.01,
+        "no2": 0.07,
+        "o3": 63.05,
+        "so2": 0.07,
+        "pm2_5": 4.9,
+        "pm10": 8.93,
+        "nh3": 0.2
+      },
+      "dt": 1785318307
+    }
+  ],
+  "city": "Mahajanga",
+  "country": "Madagascar",
+  "coordinates": {
+    "latitude": -15.7167,
+    "longitude": 46.3167
+  },
+  "timestamp": "2026-07-29T09:45:07.470613+00:00"
+}
