@@ -53,12 +53,27 @@ def build_clean():
         return
 
     df = pd.DataFrame(rows)
-    df["timestamp_utc"] = pd.to_datetime(df["timestamp_utc"], errors="coerce", utc=True)
+
+    df["timestamp_utc"] = pd.to_datetime(
+        df["timestamp_utc"], errors="coerce", utc=True, format="mixed"
+    )
+    parse_failures = df["timestamp_utc"].isnull().sum()
+    if parse_failures:
+        print(f"Warning: {parse_failures} rows had an unparseable timestamp_utc")
     df = df.dropna(subset=["city", "timestamp_utc"])
+
+    measure_columns = ["aqi", "pm25", "pm10", "no2", "o3"]
+    before = len(df)
+    df = df.dropna(subset=measure_columns, how="all")
+    dropped = before - len(df)
+    if dropped:
+        print(f"Dropped {dropped} rows with no measurement data (empty API response)")
 
     df["hour"] = df["timestamp_utc"].dt.floor("h")
     df = df.sort_values(by=["city", "hour", "raw_file_time"])
     df = df.drop_duplicates(subset=["city", "hour"], keep="last")
+
+    df["timestamp_utc"] = df["hour"]
     df = df.sort_values(by=["timestamp_utc", "city"])
 
     df = df[[
