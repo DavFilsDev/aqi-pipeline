@@ -1,0 +1,31 @@
+{
+  "coord": {
+    "lon": -0.1278,
+    "lat": 51.5074
+  },
+  "list": [
+    {
+      "main": {
+        "aqi": 2
+      },
+      "components": {
+        "co": 96.5,
+        "no": 0.73,
+        "no2": 2.99,
+        "o3": 93.2,
+        "so2": 3.39,
+        "pm2_5": 2.12,
+        "pm10": 4.69,
+        "nh3": 1.41
+      },
+      "dt": 1786029689
+    }
+  ],
+  "city": "London",
+  "country": "England",
+  "coordinates": {
+    "latitude": 51.5074,
+    "longitude": -0.1278
+  },
+  "timestamp": "2026-08-06T15:26:48.624876+00:00"
+}
