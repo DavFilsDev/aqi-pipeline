@@ -1,0 +1,31 @@
+{
+  "coord": {
+    "lon": -3.7038,
+    "lat": 40.4168
+  },
+  "list": [
+    {
+      "main": {
+        "aqi": 2
+      },
+      "components": {
+        "co": 82.88,
+        "no": 0,
+        "no2": 0.79,
+        "o3": 67.78,
+        "so2": 0.09,
+        "pm2_5": 3,
+        "pm10": 6.9,
+        "nh3": 3.6
+      },
+      "dt": 1786146046
+    }
+  ],
+  "city": "Madrid",
+  "country": "Spain",
+  "coordinates": {
+    "latitude": 40.4168,
+    "longitude": -3.7038
+  },
+  "timestamp": "2026-08-07T23:40:46.589188+00:00"
+}
