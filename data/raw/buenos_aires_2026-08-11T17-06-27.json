@@ -1,0 +1,31 @@
+{
+  "coord": {
+    "lon": -58.3816,
+    "lat": -34.6037
+  },
+  "list": [
+    {
+      "main": {
+        "aqi": 1
+      },
+      "components": {
+        "co": 81.56,
+        "no": 0.35,
+        "no2": 1.39,
+        "o3": 56.26,
+        "so2": 1.38,
+        "pm2_5": 1.16,
+        "pm10": 4.33,
+        "nh3": 0.09
+      },
+      "dt": 1786467987
+    }
+  ],
+  "city": "Buenos Aires",
+  "country": "Argentina",
+  "coordinates": {
+    "latitude": -34.6037,
+    "longitude": -58.3816
+  },
+  "timestamp": "2026-08-11T17:06:27.611785+00:00"
+}
