@@ -1,0 +1,31 @@
+{
+  "coord": {
+    "lon": 2.3522,
+    "lat": 48.8566
+  },
+  "list": [
+    {
+      "main": {
+        "aqi": 2
+      },
+      "components": {
+        "co": 119.69,
+        "no": 0,
+        "no2": 4.2,
+        "o3": 84.8,
+        "so2": 1.28,
+        "pm2_5": 6.77,
+        "pm10": 9.02,
+        "nh3": 7.63
+      },
+      "dt": 1786665091
+    }
+  ],
+  "city": "Paris",
+  "country": "France",
+  "coordinates": {
+    "latitude": 48.8566,
+    "longitude": 2.3522
+  },
+  "timestamp": "2026-08-13T23:51:57.420217+00:00"
+}
