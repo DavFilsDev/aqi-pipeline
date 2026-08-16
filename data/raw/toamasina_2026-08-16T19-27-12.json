@@ -1,0 +1,31 @@
+{
+  "coord": {
+    "lon": 49.4023,
+    "lat": -18.1492
+  },
+  "list": [
+    {
+      "main": {
+        "aqi": 1
+      },
+      "components": {
+        "co": 71.33,
+        "no": 0,
+        "no2": 0.31,
+        "o3": 32.84,
+        "so2": 0.09,
+        "pm2_5": 1.83,
+        "pm10": 4.84,
+        "nh3": 0.09
+      },
+      "dt": 1786908432
+    }
+  ],
+  "city": "Toamasina",
+  "country": "Madagascar",
+  "coordinates": {
+    "latitude": -18.1492,
+    "longitude": 49.4023
+  },
+  "timestamp": "2026-08-16T19:27:12.826273+00:00"
+}
