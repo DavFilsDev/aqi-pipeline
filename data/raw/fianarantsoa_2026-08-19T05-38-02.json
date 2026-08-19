@@ -1,0 +1,31 @@
+{
+  "coord": {
+    "lon": 47.0854,
+    "lat": -21.4536
+  },
+  "list": [
+    {
+      "main": {
+        "aqi": 1
+      },
+      "components": {
+        "co": 78.87,
+        "no": 0.07,
+        "no2": 0.24,
+        "o3": 32.4,
+        "so2": 0.05,
+        "pm2_5": 0.82,
+        "pm10": 1.25,
+        "nh3": 0.25
+      },
+      "dt": 1787117469
+    }
+  ],
+  "city": "Fianarantsoa",
+  "country": "Madagascar",
+  "coordinates": {
+    "latitude": -21.4527,
+    "longitude": 47.0857
+  },
+  "timestamp": "2026-08-19T05:38:02.954135+00:00"
+}
