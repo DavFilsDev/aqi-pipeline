@@ -1,0 +1,31 @@
+{
+  "coord": {
+    "lon": 47.0333,
+    "lat": -19.8659
+  },
+  "list": [
+    {
+      "main": {
+        "aqi": 1
+      },
+      "components": {
+        "co": 71.37,
+        "no": 0,
+        "no2": 0.2,
+        "o3": 46.83,
+        "so2": 0.04,
+        "pm2_5": 0.85,
+        "pm10": 1.5,
+        "nh3": 0.18
+      },
+      "dt": 1787237124
+    }
+  ],
+  "city": "Antsirabe",
+  "country": "Madagascar",
+  "coordinates": {
+    "latitude": -19.8659,
+    "longitude": 47.0333
+  },
+  "timestamp": "2026-08-20T14:45:25.046453+00:00"
+}
