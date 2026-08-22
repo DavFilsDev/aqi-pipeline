@@ -1,0 +1,31 @@
+{
+  "coord": {
+    "lon": 47.5079,
+    "lat": -18.8792
+  },
+  "list": [
+    {
+      "main": {
+        "aqi": 1
+      },
+      "components": {
+        "co": 166.83,
+        "no": 0.22,
+        "no2": 0.67,
+        "o3": 32.6,
+        "so2": 0.26,
+        "pm2_5": 6.83,
+        "pm10": 9.65,
+        "nh3": 1.1
+      },
+      "dt": 1787376903
+    }
+  ],
+  "city": "Antananarivo",
+  "country": "Madagascar",
+  "coordinates": {
+    "latitude": -18.8792,
+    "longitude": 47.5079
+  },
+  "timestamp": "2026-08-22T05:35:03.791968+00:00"
+}
